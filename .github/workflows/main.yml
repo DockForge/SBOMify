@@ -1,0 +1,19 @@
+name: CI
+
+on:
+    workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Run Docker Package Versions Action
+        uses: ./
+        with:
+          image: "dublok/base-linux:alpine-latest"
+        # env:
+        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -13,7 +13,7 @@ OUTPUT_FILE="/workspace/package_versions.txt"
 
 # Function to append output to file
 function append_to_file {
-    printf "%-40s %-20s %-10s\n" "$1" "$2" "$3" >> $OUTPUT_FILE
+    printf "%-45s %-45s %-10s\n" "$1" "$2" "$3" >> $OUTPUT_FILE
 }
 
 # Clear the output file

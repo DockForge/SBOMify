@@ -15,7 +15,7 @@ runs:
 
     - name: Run script inside the target Docker image
       run: |
-        docker run --rm -v ${{ github.workspace }}:/workspace -e GITHUB_ACTOR=${{ github.actor }} -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} ${{ inputs.image }} /bin/bash -c "bash /workspace/entrypoint.sh"
+        docker run --rm -v ${{ github.workspace }}:/workspace -e GITHUB_ACTOR=${{ github.actor }} -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} ${{ inputs.image }} /bin/bash -c "bash /workspace/src/entrypoint.sh"
       shell: bash
 branding:
   color: 'red'
