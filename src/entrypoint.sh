@@ -9,11 +9,11 @@
 set -e
 
 # Output file path
-OUTPUT_FILE="/workspace/package_versions.txt"
+OUTPUT_FILE="/workspace/packages.txt"
 
 # Function to append output to file
 function append_to_file {
-    printf "%-40s %-20s %-10s\n" "$1" "$2" "$3" >> $OUTPUT_FILE
+    printf "%-45s %-45s %-10s\n" "$1" "$2" "$3" >> $OUTPUT_FILE
 }
 
 # Clear the output file
@@ -31,14 +31,14 @@ fi
 
 # Capture APK packages if available
 if command -v apk &> /dev/null; then
-    apk info -vv | while read -r line; do
-        append_to_file "$(echo $line | awk -F '-' '{print $1}')" "$(echo $line | awk -F '-' '{print $2}')" "apk"
+    apk info -vv | awk -F '-' '{print $1 " " $2}' | sort -u | while read -r name version; do
+        append_to_file "$name" "$version" "apk"
     done
 fi
 
 # Capture RPM packages if available
 if command -v rpm &> /dev/null; then
-    rpm -qa --qf '%{NAME} %{VERSION}\n' | while read -r line; do
+    rpm -qa --qf '%{NAME} %{VERSION}\n' | sort -u | while read -r line; do
         append_to_file "$(echo $line | awk '{print $1}')" "$(echo $line | awk '{print $2}')" "rpm"
     done
 fi
