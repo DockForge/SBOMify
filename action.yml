@@ -14,10 +14,15 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Run script inside the target Docker image
+    - name: Install syft
       shell: bash
       run: |
-        docker run --rm -v ${{ github.workspace }}:/workspace ${{ inputs.image }} /bin/bash /workspace/src/entrypoint.sh
+        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
+    - name: Scan Docker image with syft
+      shell: bash
+      run: |
+        syft ${{ inputs.image }} -o json > /workspace/packages.json
 
     - name: Commit and push changes
       shell: bash
@@ -25,9 +30,10 @@ runs:
         GITHUB_TOKEN: ${{ inputs.github_token }}
       run: |
         cd $GITHUB_WORKSPACE
+        mv /workspace/packages.json packages.json
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git add package_versions.txt
+        git add packages.json
         git commit -m "Add package versions report"
         git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
         git push origin HEAD:${{ github.ref }}
