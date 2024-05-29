@@ -1,0 +1,19 @@
+name: 'Docker Package Versions'
+description: 'A GitHub Action to capture and list installed packages and their versions in a Docker image.'
+author: 'DockForge <dockforge@gmail.com>'
+inputs:
+  image:
+    description: "The Docker image to scan"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Run script inside the target Docker image
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/workspace -e GITHUB_ACTOR=${{ github.actor }} -e GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} ${{ inputs.image }} /bin/bash -c "bash /workspace/entrypoint.sh"
+      shell: bash
