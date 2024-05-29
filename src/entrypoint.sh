@@ -8,6 +8,12 @@
 # Fail script on any error
 set -e
 
+# Ensure necessary packages are installed
+if ! command -v dpkg-query &> /dev/null; then
+    echo "Installing necessary packages..."
+    apt-get update && apt-get install -y dpkg jq git
+fi
+
 # Output file path
 OUTPUT_FILE="/workspace/package_versions.txt"
 
