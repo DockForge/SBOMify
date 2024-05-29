@@ -37,7 +37,7 @@ fi
 echo "Checking APK packages..."
 if command -v apk &> /dev/null; then
     apk info -vv | awk '
-    /^package:/ { if (pkg) {print pkg}; pkg=$2; next }
+    /^package:/ { pkg=$2 }
     /^version:/ { ver=$2; print pkg, ver }
     ' | sort -u | while read -r name version; do
         echo "APK: $name $version"  # Debugging: Print each APK package
