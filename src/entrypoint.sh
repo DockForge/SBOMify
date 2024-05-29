@@ -36,13 +36,7 @@ fi
 # Capture APK packages if available
 echo "Checking APK packages..."
 if command -v apk &> /dev/null; then
-    echo "apk info -vv output:"
-    apk info -vv
-    
-    apk info -vv | awk '
-    /^package:/ { pkg=$2 }
-    /^version:/ { ver=$2; print pkg, ver }
-    ' | sort -u | while read -r name version; do
+    apk info -vv | awk -F ' - ' '{print $1, $2}' | while read -r name version; do
         echo "APK: $name $version"  # Debugging: Print each APK package
         append_to_file "$name" "$version" "apk"
     done
