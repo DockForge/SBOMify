@@ -15,5 +15,4 @@ jobs:
         uses: ./
         with:
           image: "dublok/base-linux:alpine-latest"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
