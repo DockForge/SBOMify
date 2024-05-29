@@ -24,28 +24,28 @@ append_to_file "NAME" "VERSION" "TYPE"
 
 # Capture APT packages if available
 if [ -f /var/lib/dpkg/status ]; then
-    chroot . dpkg-query -W -f='${binary:Package} ${Version}\n' | while read -r line; do
+    chroot /host dpkg-query -W -f='${binary:Package} ${Version}\n' | while read -r line; do
         append_to_file "$(echo $line | awk '{print $1}')" "$(echo $line | awk '{print $2}')" "apt"
     done
 fi
 
 # Capture APK packages if available
 if [ -f /lib/apk/db/installed ]; then
-    chroot . apk info -vv | while read -r line; do
+    chroot /host apk info -vv | while read -r line; do
         append_to_file "$(echo $line | awk -F '-' '{print $1}')" "$(echo $line | awk -F '-' '{print $2}')" "apk"
     done
 fi
 
 # Capture RPM packages if available
 if [ -f /var/lib/rpm/Packages ]; then
-    chroot . rpm -qa --qf '%{NAME} %{VERSION}\n' | while read -r line; do
+    chroot /host rpm -qa --qf '%{NAME} %{VERSION}\n' | while read -r line; do
         append_to_file "$(echo $line | awk '{print $1}')" "$(echo $line | awk '{print $2}')" "rpm"
     done
 fi
 
 # Capture Python packages (system-wide)
 if [ -d /usr/lib/python*/site-packages ]; then
-    chroot . pip3 list --format=freeze | while read -r line; do
+    chroot /host pip3 list --format=freeze | while read -r line; do
         package=$(echo $line | awk -F '==' '{print $1}')
         version=$(echo $line | awk -F '==' '{print $2}')
         append_to_file "$package" "$version" "python"
@@ -54,14 +54,14 @@ fi
 
 # Capture Node.js packages (global)
 if [ -d /usr/lib/node_modules ]; then
-    chroot . npm ls -g --depth=0 --json | jq -r '.dependencies | to_entries[] | "\(.key) \(.value.version)"' | while read -r line; do
+    chroot /host npm ls -g --depth=0 --json | jq -r '.dependencies | to_entries[] | "\(.key) \(.value.version)"' | while read -r line; do
         append_to_file "$(echo $line | awk '{print $1}')" "$(echo $line | awk '{print $2}')" "npm"
     done
 fi
 
 # Capture Ruby gems
 if [ -d /var/lib/gems ]; then
-    chroot . gem list | while read -r line; do
+    chroot /host gem list | while read -r line; do
         package=$(echo $line | awk '{print $1}')
         version=$(echo $line | awk '{print $2}' | tr -d '()')
         append_to_file "$package" "$version" "gem"
@@ -70,7 +70,7 @@ fi
 
 # Capture PHP Composer packages
 if [ -f /usr/local/bin/composer ]; then
-    chroot . composer global show --format=json | jq -r '.installed[] | "\(.name) \(.version)"' | while read -r line; do
+    chroot /host composer global show --format=json | jq -r '.installed[] | "\(.name) \(.version)"' | while read -r line; do
         append_to_file "$(echo $line | awk '{print $1}')" "$(echo $line | awk '{print $2}')" "composer"
     done
 fi

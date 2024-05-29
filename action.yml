@@ -10,14 +10,14 @@ runs:
   steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-      # with:
-      #   token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Run script inside the target Docker image
+      shell: bash
       run: |
-        docker run --rm -v ${{ github.workspace }}:/workspace -v /:/host:ro -e GITHUB_ACTOR=${{ github.actor }} ${{ inputs.image }} /bin/bash -c "bash /workspace/src/entrypoint.sh"
+        docker run --rm -v ${{ github.workspace }}:/workspace ${{ inputs.image }} /bin/bash /workspace/entrypoint.sh
 
     - name: Commit and push changes
+      shell: bash
       run: |
         cd $GITHUB_WORKSPACE
         git config --global user.name "${{ github.actor }}"
@@ -25,7 +25,3 @@ runs:
         git add package_versions.txt
         git commit -m "Add package versions report"
         git push
-branding:
-  color: 'red'
-  icon: 'package'
-  
