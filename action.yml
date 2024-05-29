@@ -14,7 +14,7 @@ runs:
     - name: Run script inside the target Docker image
       shell: bash
       run: |
-        docker run --rm -v ${{ github.workspace }}:/workspace ${{ inputs.image }} /bin/bash /workspace/src/entrypoint.sh
+        docker run --rm -v ${{ github.workspace }}:/workspace ${{ inputs.image }} /bin/bash /workspace/entrypoint.sh
 
     - name: Commit and push changes
       shell: bash
@@ -25,3 +25,5 @@ runs:
         git add package_versions.txt
         git commit -m "Add package versions report"
         git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
