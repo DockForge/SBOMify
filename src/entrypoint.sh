@@ -8,10 +8,17 @@
 # Fail script on any error
 set -e
 
-# Ensure necessary packages are installed
+# Ensure necessary packages are installed for Alpine
 if ! command -v dpkg-query &> /dev/null; then
     echo "Installing necessary packages..."
-    apt-get update && apt-get install -y dpkg jq git
+    if command -v apk &> /dev/null; then
+        apk update && apk add dpkg jq git
+    elif command -v apt-get &> /dev/null; then
+        apt-get update && apt-get install -y dpkg jq git
+    else
+        echo "Unsupported package manager. Exiting."
+        exit 1
+    fi
 fi
 
 # Output file path
