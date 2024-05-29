@@ -31,7 +31,11 @@ fi
 
 # Capture APK packages if available
 if command -v apk &> /dev/null; then
-    apk info -vv | awk -F '-' '{print $1 " " $2}' | sort -u | while read -r name version; do
+    apk info -vv | grep -E '^installed|^name|^version' | awk '
+    /installed/ { if (pkg) {print pkg}; pkg="" }
+    /name/ { pkg=$2 }
+    /version/ { ver=$2 }
+    END { if (pkg) {print pkg, ver} }' | sort -u | while read -r name version; do
         append_to_file "$name" "$version" "apk"
     done
 fi
