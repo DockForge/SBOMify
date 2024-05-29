@@ -22,7 +22,7 @@ function append_to_file {
 # Print header
 append_to_file "NAME" "VERSION" "TYPE"
 
-# Debugging: Print each section's header
+# Capture APT packages if available
 echo "Checking APT packages..."
 if command -v dpkg-query &> /dev/null; then
     dpkg-query -W -f='${binary:Package} ${Version}\n' | while read -r line; do
@@ -33,14 +33,10 @@ else
     echo "dpkg-query not found"
 fi
 
-# Debugging: Print each section's header
+# Capture APK packages if available
 echo "Checking APK packages..."
 if command -v apk &> /dev/null; then
-    apk info -vv | grep -E '^installed|^name|^version' | awk '
-    /installed/ { if (pkg) {print pkg}; pkg="" }
-    /name/ { pkg=$2 }
-    /version/ { ver=$2 }
-    END { if (pkg) {print pkg, ver} }' | sort -u | while read -r name version; do
+    apk info -vv | awk -F '-' '{print $1 " " $2}' | sort -u | while read -r name version; do
         echo "APK: $name $version"  # Debugging: Print each APK package
         append_to_file "$name" "$version" "apk"
     done
@@ -48,7 +44,7 @@ else
     echo "apk not found"
 fi
 
-# Debugging: Print each section's header
+# Capture RPM packages if available
 echo "Checking RPM packages..."
 if command -v rpm &> /dev/null; then
     rpm -qa --qf '%{NAME} %{VERSION}\n' | sort -u | while read -r line; do
@@ -59,7 +55,7 @@ else
     echo "rpm not found"
 fi
 
-# Debugging: Print each section's header
+# Capture Python packages (system-wide)
 echo "Checking Python packages..."
 if command -v pip3 &> /dev/null; then
     pip3 list --format=freeze | while read -r line; do
@@ -72,7 +68,7 @@ else
     echo "pip3 not found"
 fi
 
-# Debugging: Print each section's header
+# Capture Node.js packages (global)
 echo "Checking Node.js packages..."
 if command -v npm &> /dev/null; then
     npm ls -g --depth=0 --json | jq -r '.dependencies | to_entries[] | "\(.key) \(.value.version)"' | while read -r line; do
@@ -83,7 +79,7 @@ else
     echo "npm not found"
 fi
 
-# Debugging: Print each section's header
+# Capture Ruby gems
 echo "Checking Ruby gems..."
 if command -v gem &> /dev/null; then
     gem list | while read -r line; do
@@ -96,7 +92,7 @@ else
     echo "gem not found"
 fi
 
-# Debugging: Print each section's header
+# Capture PHP Composer packages
 echo "Checking PHP Composer packages..."
 if command -v composer &> /dev/null; then
     composer global show --format=json | jq -r '.installed[] | "\(.name) \(.version)"' | while read -r line; do
