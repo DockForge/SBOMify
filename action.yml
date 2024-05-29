@@ -10,8 +10,8 @@ runs:
   steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+      # with:
+      #   token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Run script inside the target Docker image
       run: |
