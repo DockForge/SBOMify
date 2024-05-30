@@ -11,5 +11,5 @@ jobs:
       - name: Run Docker Package Versions Action
         uses: ./
         with:
-          image: "dublok/base-linux:alpine-latest"
+          images: "dublok/base-linux:alpine-latest"
           github_token: ${{ secrets.GITHUB_TOKEN }}
