@@ -33,7 +33,7 @@ runs:
       run: |
         IFS=',' read -ra IMAGES <<< "${{ inputs.images }}"
         for image in "${IMAGES[@]}"; do
-          filename=${image//[:\/]/_}
+          filename=$(echo $image | tr '/:' '_')
           syft $image --scope all-layers -o syft-table > packages_$filename.txt
           syft $image --scope all-layers -o json | jq '.' > sbom_$filename.json
           echo "Created files: packages_$filename.txt and sbom_$filename.json"
@@ -51,11 +51,13 @@ runs:
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        IFS=',' read -ra IMAGES <<< "${{ inputs.images }}"
         for image in "${IMAGES[@]}"; do
-          filename=${image//[:\/]/_}
+          filename=$(echo $image | tr '/:' '_')
           git add packages_$filename.txt || echo "Failed to add packages_$filename.txt"
           git add sbom_$filename.json || echo "Failed to add sbom_$filename.json"
         done
+        git status
         git commit -m "Update SBOM for images: ${{ inputs.images }}."
         git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
         git push origin HEAD:${{ github.ref }}
