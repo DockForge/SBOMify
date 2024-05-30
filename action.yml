@@ -12,6 +12,14 @@ inputs:
     description: "Path to store the SBOM files"
     required: false
     default: ""
+  sbom_file_prefix:
+    description: "Prefix for the SBOM files"
+    required: false
+    default: ""
+  sbom_file_suffix:
+    description: "Suffix for the SBOM files"
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -43,9 +51,9 @@ runs:
         IFS=',' read -ra IMAGES <<< "${{ inputs.images }}"
         for image in "${IMAGES[@]}"; do
           filename=$(echo $image | tr '/:' '_')
-          syft $image --scope all-layers -o syft-table > $GITHUB_WORKSPACE/${{ inputs.output_path }}/packages_$filename.txt
-          syft $image --scope all-layers -o json | jq '.' > $GITHUB_WORKSPACE/${{ inputs.output_path }}/sbom_$filename.json
-          echo "Created files: $GITHUB_WORKSPACE/${{ inputs.output_path }}/packages_$filename.txt and $GITHUB_WORKSPACE/${{ inputs.output_path }}/sbom_$filename.json"
+          syft $image --scope all-layers -o syft-table > $GITHUB_WORKSPACE/${{ inputs.output_path }}/${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}.txt
+          syft $image --scope all-layers -o json | jq '.' > $GITHUB_WORKSPACE/${{ inputs.output_path }}/${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}.json
+          echo "Created files: $GITHUB_WORKSPACE/${{ inputs.output_path }}/${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}.txt and $GITHUB_WORKSPACE/${{ inputs.output_path }}/${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}.json"
         done
 
     - name: List directory for debugging
@@ -63,8 +71,8 @@ runs:
         IFS=',' read -ra IMAGES <<< "${{ inputs.images }}"
         for image in "${IMAGES[@]}"; do
           filename=$(echo $image | tr '/:' '_')
-          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/packages_$filename.txt || echo "Failed to add packages_$filename.txt"
-          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/sbom_$filename.json || echo "Failed to add sbom_$filename.json"
+          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}.txt || echo "Failed to add ${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}.txt"
+          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}.json || echo "Failed to add ${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}.json"
         done
         git status
         git commit -m "Update SBOM for images: ${{ inputs.images }}."
