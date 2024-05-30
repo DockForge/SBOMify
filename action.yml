@@ -24,15 +24,18 @@ runs:
       shell: bash
       run: |
         IFS=',' read -ra IMAGES <<< "${{ inputs.images }}"
-        echo "::set-output name=images::${IMAGES[@]}"
+        for image in "${IMAGES[@]}"; do
+          echo "IMAGE=$image" >> $GITHUB_ENV
+        done
 
     - name: Scan Docker images with syft
       shell: bash
       run: |
         IFS=',' read -ra IMAGES <<< "${{ inputs.images }}"
         for image in "${IMAGES[@]}"; do
-          syft $image --scope all-layers -o syft-table > packages_${image//:/_}.txt
-          syft $image --scope all-layers -o json | jq '.' > sbom_${image//:/_}.json
+          filename=${image//[:\/]/_}
+          syft $image --scope all-layers -o syft-table > packages_$filename.txt
+          syft $image --scope all-layers -o json | jq '.' > sbom_$filename.json
         done
 
     - name: Commit and push changes
@@ -43,8 +46,9 @@ runs:
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         for image in "${IMAGES[@]}"; do
-          git add packages_${image//:/_}.txt
-          git add sbom_${image//:/_}.json
+          filename=${image//[:\/]/_}
+          git add packages_$filename.txt
+          git add sbom_$filename.json
         done
         git commit -m "Update SBOM for images: ${{ inputs.images }}."
         git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
