@@ -8,6 +8,10 @@ inputs:
   github_token:
     description: "GitHub token for authentication"
     required: true
+  output_path:
+    description: "Path to store the SBOM files"
+    required: false
+    default: "/workspace"
 runs:
   using: "composite"
   steps:
@@ -28,21 +32,26 @@ runs:
           echo "IMAGE=$image" >> $GITHUB_ENV
         done
 
+    - name: Create output directory
+      shell: bash
+      run: |
+        mkdir -p ${{ inputs.output_path }}
+
     - name: Scan Docker images with syft
       shell: bash
       run: |
         IFS=',' read -ra IMAGES <<< "${{ inputs.images }}"
         for image in "${IMAGES[@]}"; do
           filename=$(echo $image | tr '/:' '_')
-          syft $image --scope all-layers -o syft-table > packages_$filename.txt
-          syft $image --scope all-layers -o json | jq '.' > sbom_$filename.json
-          echo "Created files: packages_$filename.txt and sbom_$filename.json"
+          syft $image --scope all-layers -o syft-table > ${{ inputs.output_path }}/packages_$filename.txt
+          syft $image --scope all-layers -o json | jq '.' > ${{ inputs.output_path }}/sbom_$filename.json
+          echo "Created files: ${{ inputs.output_path }}/packages_$filename.txt and ${{ inputs.output_path }}/sbom_$filename.json"
         done
 
     - name: List directory for debugging
       shell: bash
       run: |
-        ls -la
+        ls -la ${{ inputs.output_path }}
 
     - name: Commit and push changes
       shell: bash
@@ -54,8 +63,8 @@ runs:
         IFS=',' read -ra IMAGES <<< "${{ inputs.images }}"
         for image in "${IMAGES[@]}"; do
           filename=$(echo $image | tr '/:' '_')
-          git add packages_$filename.txt || echo "Failed to add packages_$filename.txt"
-          git add sbom_$filename.json || echo "Failed to add sbom_$filename.json"
+          git add ${{ inputs.output_path }}/packages_$filename.txt || echo "Failed to add packages_$filename.txt"
+          git add ${{ inputs.output_path }}/sbom_$filename.json || echo "Failed to add sbom_$filename.json"
         done
         git status
         git commit -m "Update SBOM for images: ${{ inputs.images }}."
