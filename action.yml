@@ -84,7 +84,7 @@ runs:
           REPOSITORY=${IMAGE[0]}
           TAG=${IMAGE[1]}
           # Replace "X" with "Y"
-          filename=$(echo ${{ inputs.sbom_file_name }} | sed "s/\[REPOSITORY\]/$REPOSITORY/g" | sed "s/\[TAG\]/$TAG/g")
+          filename=$(echo ${{ inputs.sbom_file_name }} | sed "s|\\[REPOSITORY\\]|$REPOSITORY|g" | sed "s|\\[TAG\\]|$TAG|g")
           filename=${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}
 
           git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.txt || echo "Failed to add $filename.txt"
