@@ -54,7 +54,13 @@ runs:
       run: |
         IFS=',' read -ra IMAGES <<< "${{ inputs.images }}"
         for image in "${IMAGES[@]}"; do
-          filename=${{ inputs.sbom_file_prefix }}$(echo $image | tr '/:' '_')${{ inputs.sbom_file_suffix }}
+          IFS=':' read -r -a IMAGE <<< "$image"
+          REPOSITORY=${IMAGE[0]}
+          TAG=${IMAGE[1]}
+          # Replace "X" with "Y"
+          filename=$(echo ${{ inputs.sbom_file_name }} | sed "s/\[REPOSITORY\]/$REPOSITORY/g" | sed "s/\[TAG\]/$TAG/g")
+          filename=${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}
+
           syft $image --scope all-layers -o syft-table > $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.txt
           syft $image --scope all-layers -o json | jq '.' > $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.json
           echo "Created files: $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.txt and $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.json"
@@ -73,8 +79,14 @@ runs:
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         IFS=',' read -ra IMAGES <<< "${{ inputs.images }}"
-        for image in "${IMAGES[@]}"; do
-          filename=${{ inputs.sbom_file_prefix }}$(echo $image | tr '/:' '_')${{ inputs.sbom_file_suffix }}
+        for image in "${IMAGES[@]}"; do        
+          IFS=':' read -r -a IMAGE <<< "$image"
+          REPOSITORY=${IMAGE[0]}
+          TAG=${IMAGE[1]}
+          # Replace "X" with "Y"
+          filename=$(echo ${{ inputs.sbom_file_name }} | sed "s/\[REPOSITORY\]/$REPOSITORY/g" | sed "s/\[TAG\]/$TAG/g")
+          filename=${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}
+          
           git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.txt || echo "Failed to add $filename.txt"
           git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.json || echo "Failed to add $filename.json"
         done
