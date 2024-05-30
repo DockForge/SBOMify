@@ -36,7 +36,13 @@ runs:
           filename=${image//[:\/]/_}
           syft $image --scope all-layers -o syft-table > packages_$filename.txt
           syft $image --scope all-layers -o json | jq '.' > sbom_$filename.json
+          echo "Created files: packages_$filename.txt and sbom_$filename.json"
         done
+
+    - name: List directory for debugging
+      shell: bash
+      run: |
+        ls -la
 
     - name: Commit and push changes
       shell: bash
@@ -47,8 +53,8 @@ runs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         for image in "${IMAGES[@]}"; do
           filename=${image//[:\/]/_}
-          git add packages_$filename.txt
-          git add sbom_$filename.json
+          git add packages_$filename.txt || echo "Failed to add packages_$filename.txt"
+          git add sbom_$filename.json || echo "Failed to add sbom_$filename.json"
         done
         git commit -m "Update SBOM for images: ${{ inputs.images }}."
         git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
