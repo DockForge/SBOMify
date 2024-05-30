@@ -37,3 +37,6 @@ runs:
         git commit -m "Update SBOM for ${{ inputs.image }} image."
         git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
         git push origin HEAD:${{ github.ref }}
+branding:
+  icon: 'package'
+  color: 'red'
