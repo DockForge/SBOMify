@@ -11,7 +11,7 @@ inputs:
   output_path:
     description: "Path to store the SBOM files"
     required: false
-    default: "/workspace"
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -35,7 +35,7 @@ runs:
     - name: Create output directory
       shell: bash
       run: |
-        mkdir -p ${{ inputs.output_path }}
+        mkdir -p $GITHUB_WORKSPACE/${{ inputs.output_path }}
 
     - name: Scan Docker images with syft
       shell: bash
@@ -43,15 +43,15 @@ runs:
         IFS=',' read -ra IMAGES <<< "${{ inputs.images }}"
         for image in "${IMAGES[@]}"; do
           filename=$(echo $image | tr '/:' '_')
-          syft $image --scope all-layers -o syft-table > ${{ inputs.output_path }}/packages_$filename.txt
-          syft $image --scope all-layers -o json | jq '.' > ${{ inputs.output_path }}/sbom_$filename.json
-          echo "Created files: ${{ inputs.output_path }}/packages_$filename.txt and ${{ inputs.output_path }}/sbom_$filename.json"
+          syft $image --scope all-layers -o syft-table > $GITHUB_WORKSPACE/${{ inputs.output_path }}/packages_$filename.txt
+          syft $image --scope all-layers -o json | jq '.' > $GITHUB_WORKSPACE/${{ inputs.output_path }}/sbom_$filename.json
+          echo "Created files: $GITHUB_WORKSPACE/${{ inputs.output_path }}/packages_$filename.txt and $GITHUB_WORKSPACE/${{ inputs.output_path }}/sbom_$filename.json"
         done
 
     - name: List directory for debugging
       shell: bash
       run: |
-        ls -la ${{ inputs.output_path }}
+        ls -la $GITHUB_WORKSPACE/${{ inputs.output_path }}
 
     - name: Commit and push changes
       shell: bash
@@ -63,8 +63,8 @@ runs:
         IFS=',' read -ra IMAGES <<< "${{ inputs.images }}"
         for image in "${IMAGES[@]}"; do
           filename=$(echo $image | tr '/:' '_')
-          git add ${{ inputs.output_path }}/packages_$filename.txt || echo "Failed to add packages_$filename.txt"
-          git add ${{ inputs.output_path }}/sbom_$filename.json || echo "Failed to add sbom_$filename.json"
+          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/packages_$filename.txt || echo "Failed to add packages_$filename.txt"
+          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/sbom_$filename.json || echo "Failed to add sbom_$filename.json"
         done
         git status
         git commit -m "Update SBOM for images: ${{ inputs.images }}."
