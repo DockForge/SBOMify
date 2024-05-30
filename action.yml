@@ -2,8 +2,8 @@ name: 'Docker Package Versions'
 description: 'A GitHub Action to capture and list installed packages and their versions in a Docker image.'
 author: 'DockForge <dockforge@gmail.com>'
 inputs:
-  image:
-    description: "The Docker image to scan"
+  images:
+    description: "The Docker images to scan, separated by commas"
     required: true
   github_token:
     description: "GitHub token for authentication"
@@ -19,11 +19,17 @@ runs:
       run: |
         curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 
-    - name: Scan Docker image with syft
+    - name: Scan Docker images with syft
       shell: bash
       run: |
-        syft ${{ inputs.image }} --scope all-layers -o syft-table > packages.txt
-        syft ${{ inputs.image }} --scope all-layers -o json | jq '.' > sbom.json
+        IFS=',' read -r -a image_array <<< "${{ inputs.images }}"
+        for image in "${image_array[@]}"; do
+          trimmed_image=$(echo $image | xargs)  # Trims any leading or trailing whitespace
+          syft $trimmed_image --scope all-layers -o syft-table > "${trimmed_image}_packages.txt"
+          syft $trimmed_image --scope all-layers -o json | jq '.' > "${trimmed_image}_sbom.json"
+          git add "${trimmed_image}_packages.txt"
+          git add "${trimmed_image}_sbom.json"
+        done
 
     - name: Commit and push changes
       shell: bash
@@ -32,9 +38,7 @@ runs:
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git add packages.txt
-        git add sbom.json
-        git commit -m "Update SBOM for ${{ inputs.image }} image."
+        git commit -m "Update SBOMs for Docker images."
         git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
         git push origin HEAD:${{ github.ref }}
 branding:
