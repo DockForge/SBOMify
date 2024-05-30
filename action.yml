@@ -23,7 +23,7 @@ runs:
       shell: bash
       run: |
         syft ${{ inputs.image }} --scope all-layers -o syft-table > packages.txt
-        syft ${{ inputs.image }} --scope all-layers -o json > sbom.json        
+        syft ${{ inputs.image }} --scope all-layers -o json | jq '.' > sbom.json
 
     - name: Commit and push changes
       shell: bash
