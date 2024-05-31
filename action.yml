@@ -57,7 +57,6 @@ runs:
           IFS=':' read -r -a IMAGE <<< "$image"
           REPOSITORY=${IMAGE[0]}
           TAG=${IMAGE[1]}
-          # Replace "X" with "Y"
           filename=$(echo ${{ inputs.sbom_file_name }} | sed "s|\\[REPOSITORY\\]|$REPOSITORY|g" | sed "s|\\[TAG\\]|$TAG|g")
           filename=${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}
 
@@ -83,7 +82,6 @@ runs:
           IFS=':' read -r -a IMAGE <<< "$image"
           REPOSITORY=${IMAGE[0]}
           TAG=${IMAGE[1]}
-          # Replace "X" with "Y"
           filename=$(echo ${{ inputs.sbom_file_name }} | sed "s|\\[REPOSITORY\\]|$REPOSITORY|g" | sed "s|\\[TAG\\]|$TAG|g")
           filename=${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}
 
@@ -93,7 +91,38 @@ runs:
         git status
         git commit -m "Update SBOM for images: ${{ inputs.images }}."
         git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
+        
+        # Push changes to the current branch
         git push origin HEAD:${{ github.ref }}
+
+        # Detect the default branch
+        DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+
+        # Check if current branch is the default branch
+        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+        if [ "$CURRENT_BRANCH" != "$DEFAULT_BRANCH" ]; then
+          # Copy SBOM files to the main branch workspace
+          git fetch origin $DEFAULT_BRANCH
+          git checkout $DEFAULT_BRANCH
+          for image in "${IMAGES[@]}"; do
+            IFS=':' read -r -a IMAGE <<< "$image"
+            REPOSITORY=${IMAGE[0]}
+            TAG=${IMAGE[1]}
+            filename=$(echo ${{ inputs.sbom_file_name }} | sed "s|\\[REPOSITORY\\]|$REPOSITORY|g" | sed "s|\\[TAG\\]|$TAG|g")
+            filename=${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}
+
+            cp $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.txt $GITHUB_WORKSPACE/${{ inputs.output_path }}/main/$filename.txt || echo "Failed to copy $filename.txt"
+            cp $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.json $GITHUB_WORKSPACE/${{ inputs.output_path }}/main/$filename.json || echo "Failed to copy $filename.json"
+          done
+
+          # Add, commit and push the changes to the default branch
+          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/main/*.txt || echo "Failed to add txt files"
+          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/main/*.json || echo "Failed to add json files"
+          git status
+          git commit -m "Update SBOM files for images: ${{ inputs.images }}."
+          git push origin $DEFAULT_BRANCH
+        fi
 branding:
   icon: 'package'
   color: 'red'
