@@ -93,7 +93,15 @@ runs:
         git status
         git commit -m "Update SBOM for images: ${{ inputs.images }}."
         git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
-        git push origin HEAD:${{ github.ref }}
+        
+        # Check if the current branch is a tag
+        if [[ ${{ github.ref }} == refs/tags/* ]]; then
+          echo "Current ref is a tag. Force pushing to update the tag."
+          git push -f origin HEAD:${{ github.ref }}
+        else
+          echo "Current ref is not a tag. Pushing normally."
+          git push origin HEAD:${{ github.ref }}
+        fi
 
     - name: Commit and push changes to default branch if different
       shell: bash
