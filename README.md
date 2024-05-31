@@ -1,6 +1,6 @@
-# [SBOMify](https://github.com/DockForge/SBOMify)
+# [SBOMinify](https://github.com/DockForge/SBOMinify)
 
-SBOMify is a GitHub Action to capture and list installed packages and their versions in a Docker image, generating Software Bill of Materials (SBOM) files. This action leverages some special technics to scan Docker images and output SBOM files in both table and JSON formats.
+SBOMinify is a GitHub Action to capture and list installed packages and their versions in a Docker image, generating Software Bill of Materials (SBOM) files. This action leverages some special technics to scan Docker images and output SBOM files in both table and JSON formats.
 
 ## Features
 
@@ -22,7 +22,7 @@ SBOMify is a GitHub Action to capture and list installed packages and their vers
 
 ### Example Workflow
 
-Here's an example of how to use the SBOMify action in a GitHub workflow:
+Here's an example of how to use the SBOMinify action in a GitHub workflow:
 
 ```yaml
 name: Generate SBOM
@@ -38,8 +38,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4.1.6
 
-      - name: Run SBOMify
-        uses: DockForge/SBOMify@v1
+      - name: Run SBOMinify
+        uses: DockForge/SBOMinify@v1
         with:
           images: 'ubuntu:20.04,alpine:latest'
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -51,7 +51,7 @@ jobs:
 
 ### Outputs
 
-SBOMify generates the following files for each Docker image:
+SBOMinify generates the following files for each Docker image:
 
 - `[output_path]/[sbom_file_prefix][REPOSITORY]_[TAG][sbom_file_suffix].txt`: Human-readable table format
 - `[output_path]/[sbom_file_prefix][REPOSITORY]_[TAG][sbom_file_suffix].json`: JSON format
@@ -62,7 +62,7 @@ You can customize the file names and paths using the `output_path`, `sbom_file_p
 
 ### Example
 
-For an image `ubuntu:20.04` with the default settings, SBOMify will generate the following files:
+For an image `ubuntu:20.04` with the default settings, SBOMinify will generate the following files:
 
 - `sbom/sbom_ubuntu_20.04_scan.txt`
 - `sbom/sbom_ubuntu_20.04_scan.json`

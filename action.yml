@@ -1,4 +1,4 @@
-name: 'SBOMify'
+name: 'SBOMinify'
 description: 'A GitHub Action to capture and list installed packages and their versions in a Docker image.'
 author: 'DockForge <dockforge@gmail.com>'
 inputs:
