@@ -70,75 +70,54 @@ runs:
       run: |
         ls -la $GITHUB_WORKSPACE/${{ inputs.output_path }}
 
-    - name: Commit and push changes to current branch
+    - name: Commit and push changes
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
+        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+        # Create a temporary directory for copying files
+        TEMP_DIR=$(mktemp -d)
+
+        # Copy SBOM files to the temporary directory
         IFS=',' read -ra IMAGES <<< "${{ inputs.images }}"
-        for image in "${IMAGES[@]}"; do        
+        for image in "${IMAGES[@]}"; do
           IFS=':' read -r -a IMAGE <<< "$image"
           REPOSITORY=${IMAGE[0]}
           TAG=${IMAGE[1]}
           filename=$(echo ${{ inputs.sbom_file_name }} | sed "s|\\[REPOSITORY\\]|$REPOSITORY|g" | sed "s|\\[TAG\\]|$TAG|g")
           filename=${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}
 
-          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.txt || echo "Failed to add $filename.txt"
-          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.json || echo "Failed to add $filename.json"
+          cp $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.txt $TEMP_DIR/$filename.txt || echo "Failed to copy $filename.txt"
+          cp $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.json $TEMP_DIR/$filename.json || echo "Failed to copy $filename.json"
         done
+
+        # Fetch and checkout the default branch
+        git fetch origin $DEFAULT_BRANCH
+        git checkout $DEFAULT_BRANCH
+
+        # Copy SBOM files from the temporary directory to the workspace
+        cp $TEMP_DIR/*.txt $GITHUB_WORKSPACE/${{ inputs.output_path }}/ || echo "Failed to copy txt files"
+        cp $TEMP_DIR/*.json $GITHUB_WORKSPACE/${{ inputs.output_path }}/ || echo "Failed to copy json files"
+
+        # Add, commit, and push the changes to the default branch
+        git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/*.txt || echo "Failed to add txt files"
+        git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/*.json || echo "Failed to add json files"
         git status
-        git commit -m "Update SBOM for images: ${{ inputs.images }}."
-        git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
-        
+        git commit -m "Update SBOM files for images: ${{ inputs.images }}."
+        git push origin $DEFAULT_BRANCH
+
+        # Check if the current ref is a tag
         if [[ ${{ github.ref }} == refs/tags/* ]]; then
-          echo "Current ref is a tag. Force pushing to update the tag."
-          git push -f origin HEAD:${{ github.ref }}
-        else
-          echo "Current ref is not a tag. Pushing normally."
-          git push origin HEAD:${{ github.ref }}
-        fi
+          TAG_NAME=${{ github.ref }}
+          TAG_NAME=${TAG_NAME/refs\/tags\//}
 
-    - name: Commit and push changes to default branch if different
-      shell: bash
-      env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
-        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-      run: |
-        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-
-        if [ "$CURRENT_BRANCH" != "$DEFAULT_BRANCH" ]; then
-          # Create a temporary directory for copying files
-          TEMP_DIR=$(mktemp -d)
-
-          # Copy SBOM files to the temporary directory
-          IFS=',' read -ra IMAGES <<< "${{ inputs.images }}"
-          for image in "${IMAGES[@]}"; do
-            IFS=':' read -r -a IMAGE <<< "$image"
-            REPOSITORY=${IMAGE[0]}
-            TAG=${IMAGE[1]}
-            filename=$(echo ${{ inputs.sbom_file_name }} | sed "s|\\[REPOSITORY\\]|$REPOSITORY|g" | sed "s|\\[TAG\\]|$TAG|g")
-            filename=${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}
-
-            cp $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.txt $TEMP_DIR/$filename.txt || echo "Failed to copy $filename.txt"
-            cp $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.json $TEMP_DIR/$filename.json || echo "Failed to copy $filename.json"
-          done
-
-          # Fetch and checkout the default branch
-          git fetch origin $DEFAULT_BRANCH
-          git checkout $DEFAULT_BRANCH
-
-          # Copy SBOM files from the temporary directory to the workspace
-          cp $TEMP_DIR/*.txt $GITHUB_WORKSPACE/${{ inputs.output_path }}/ || echo "Failed to copy txt files"
-          cp $TEMP_DIR/*.json $GITHUB_WORKSPACE/${{ inputs.output_path }}/ || echo "Failed to copy json files"
-
-          # Add, commit, and push the changes to the default branch
-          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/*.txt || echo "Failed to add txt files"
-          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/*.json || echo "Failed to add json files"
-          git status
-          git commit -m "Update SBOM files for images: ${{ inputs.images }}."
-          git push origin $DEFAULT_BRANCH
+          # Update the tag to point to the latest commit on the default branch
+          git tag -f $TAG_NAME
+          git push origin -f $TAG_NAME
         fi
 branding:
   icon: 'package'
