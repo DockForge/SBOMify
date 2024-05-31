@@ -101,7 +101,6 @@ runs:
         else
           echo "Current ref is not a tag. Pushing normally."
           git push origin HEAD:${{ github.ref }}
-        fi
 
     - name: Commit and push changes to default branch if different
       shell: bash
@@ -126,13 +125,14 @@ runs:
             filename=$(echo ${{ inputs.sbom_file_name }} | sed "s|\\[REPOSITORY\\]|$REPOSITORY|g" | sed "s|\\[TAG\\]|$TAG|g")
             filename=${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}
 
-            cp $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.txt $GITHUB_WORKSPACE/${{ inputs.output_path }}/main/$filename.txt || echo "Failed to copy $filename.txt"
-            cp $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.json $GITHUB_WORKSPACE/${{ inputs.output_path }}/main/$filename.json || echo "Failed to copy $filename.json"
+            # Use absolute paths for copying files
+            cp $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.txt $GITHUB_WORKSPACE/${{ inputs.output_path }}/main_$filename.txt || echo "Failed to copy $filename.txt"
+            cp $GITHUB_WORKSPACE/${{ inputs.output_path }}/$filename.json $GITHUB_WORKSPACE/${{ inputs.output_path }}/main_$filename.json || echo "Failed to copy $filename.json"
           done
 
           # Add, commit and push the changes to the default branch
-          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/main/*.txt || echo "Failed to add txt files"
-          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/main/*.json || echo "Failed to add json files"
+          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/main_*.txt || echo "Failed to add txt files"
+          git add $GITHUB_WORKSPACE/${{ inputs.output_path }}/main_*.json || echo "Failed to add json files"
           git status
           git commit -m "Update SBOM files for images: ${{ inputs.images }}."
           git push origin $DEFAULT_BRANCH
