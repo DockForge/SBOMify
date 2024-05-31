@@ -57,6 +57,7 @@ runs:
           IFS=':' read -r -a IMAGE <<< "$image"
           REPOSITORY=${IMAGE[0]}
           TAG=${IMAGE[1]}
+          # Replace "X" with "Y"
           filename=$(echo ${{ inputs.sbom_file_name }} | sed "s|\\[REPOSITORY\\]|$REPOSITORY|g" | sed "s|\\[TAG\\]|$TAG|g")
           filename=${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}
 
@@ -70,7 +71,7 @@ runs:
       run: |
         ls -la $GITHUB_WORKSPACE/${{ inputs.output_path }}
 
-    - name: Commit and push changes
+    - name: Commit and push changes to current branch
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
@@ -82,6 +83,7 @@ runs:
           IFS=':' read -r -a IMAGE <<< "$image"
           REPOSITORY=${IMAGE[0]}
           TAG=${IMAGE[1]}
+          # Replace "X" with "Y"
           filename=$(echo ${{ inputs.sbom_file_name }} | sed "s|\\[REPOSITORY\\]|$REPOSITORY|g" | sed "s|\\[TAG\\]|$TAG|g")
           filename=${{ inputs.sbom_file_prefix }}$filename${{ inputs.sbom_file_suffix }}
 
@@ -91,20 +93,24 @@ runs:
         git status
         git commit -m "Update SBOM for images: ${{ inputs.images }}."
         git remote set-url origin https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git
-        
-        # Push changes to the current branch
         git push origin HEAD:${{ github.ref }}
 
-        # Detect the default branch
-        DEFAULT_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
-
-        # Check if current branch is the default branch
+    - name: Commit and push changes to default branch if different
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      run: |
+        # Check if the current branch is the default branch
         CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
         if [ "$CURRENT_BRANCH" != "$DEFAULT_BRANCH" ]; then
-          # Copy SBOM files to the main branch workspace
+          # Fetch and checkout the default branch
           git fetch origin $DEFAULT_BRANCH
           git checkout $DEFAULT_BRANCH
+          
+          # Copy SBOM files to the default branch workspace
+          IFS=',' read -ra IMAGES <<< "${{ inputs.images }}"
           for image in "${IMAGES[@]}"; do
             IFS=':' read -r -a IMAGE <<< "$image"
             REPOSITORY=${IMAGE[0]}
