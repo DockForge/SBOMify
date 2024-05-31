@@ -98,6 +98,7 @@ runs:
         else
           echo "Current ref is not a tag. Pushing normally."
           git push origin HEAD:${{ github.ref }}
+        fi
 
     - name: Commit and push changes to default branch if different
       shell: bash
