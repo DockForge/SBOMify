@@ -77,4 +77,4 @@ Contributions are welcome! Please open an issue or submit a pull request.
 
 ## Contact
 
-For any inquiries, please contact us at [dockforge@gmail.com](mailto:dockforge@gmail.com).
+For any inquiries, please contact us at [dublokcom@gmail.com](mailto:dublokcom@gmail.com).

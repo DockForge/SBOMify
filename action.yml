@@ -1,6 +1,6 @@
 name: 'SBOMinify'
 description: 'A GitHub Action to capture and list installed packages and their versions in a Docker image.'
-author: 'DockForge <dockforge@gmail.com>'
+author: 'DockForge <dublokcom@gmail.com>'
 inputs:
   images:
     description: "Comma-separated list of Docker images to scan"
