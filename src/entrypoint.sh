@@ -71,6 +71,14 @@ cleanup() {
 # Trap errors and execute cleanup
 trap cleanup ERR
 
+# Start Docker daemon in the background
+dockerd-entrypoint.sh &
+
+# Wait for Docker daemon to start
+until docker info > /dev/null 2>&1; do
+  sleep 1
+done
+
 # Default values for optional parameters
 OUTPUT_PATH=${OUTPUT_PATH:-"/output"}
 FILE_PREFIX=${FILE_PREFIX:-""}
@@ -107,3 +115,11 @@ scan_images
 
 # List the output directory for debugging
 ls -la "$OUTPUT_PATH"
+
+# Stop Docker daemon if there are any running containers
+running_containers=$(docker ps -q)
+if [ -n "$running_containers" ]; then
+  docker kill $running_containers
+else
+  echo "No running containers to kill."
+fi
