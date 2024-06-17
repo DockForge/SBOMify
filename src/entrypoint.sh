@@ -56,8 +56,16 @@ scan_images() {
 
     echo "Generated filename: $filename"
 
-    syft $image --scope all-layers -o syft-table > "${OUTPUT_PATH}/${filename}.txt"
-    syft $image --scope all-layers -o json | jq '.' > "${OUTPUT_PATH}/${filename}.json"
+    if ! syft $image --scope all-layers -o syft-table > "${OUTPUT_PATH}/${filename}.txt"; then
+      cleanup
+      exit 1
+    fi
+
+    if ! syft $image --scope all-layers -o json | jq '.' > "${OUTPUT_PATH}/${filename}.json"; then
+      cleanup
+      exit 1
+    fi
+
     echo "Created files: ${OUTPUT_PATH}/${filename}.txt and ${OUTPUT_PATH}/${filename}.json"
   done
 }
@@ -70,14 +78,6 @@ cleanup() {
 
 # Trap errors and execute cleanup
 trap cleanup ERR
-
-# Start Docker daemon in the background
-dockerd-entrypoint.sh &
-
-# Wait for Docker daemon to start
-until docker info > /dev/null 2>&1; do
-  sleep 1
-done
 
 # Default values for optional parameters
 OUTPUT_PATH=${OUTPUT_PATH:-"/output"}
@@ -115,11 +115,3 @@ scan_images
 
 # List the output directory for debugging
 ls -la "$OUTPUT_PATH"
-
-# Stop Docker daemon if there are any running containers
-running_containers=$(docker ps -q)
-if [ -n "$running_containers" ]; then
-  docker kill $running_containers
-else
-  echo "No running containers to kill."
-fi
