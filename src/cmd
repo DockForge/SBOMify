@@ -1,0 +1,13 @@
+docker build -t dublok/sbominify:latest .
+docker push dublok/sbominify:latest
+docker tag dublok/sbominify:latest ghcr.io/dockforge/sbominify:latest
+echo TOKEN | docker login ghcr.io -u USER --password-stdin
+docker push ghcr.io/dockforge/sbominify:latest
+
+docker run --rm \
+-e IMAGES="jenkins/inbound-agent:latest,ruby:3.3.1-alpine" \
+-e FILE_PREFIX="" \
+-e FILE_SUFFIX="" \
+-e FILE_NAME="[ORGANIZATION]_[REPOSITORY]_[TAG]" \
+-v "C:/Users/Ercin/Desktop/git/github/dockforge/SBOMinify/src/output:/output" \
+dublok/sbominify:latest
