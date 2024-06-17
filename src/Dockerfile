@@ -2,9 +2,8 @@
 FROM alpine:3.19
 
 # Metadata as labels
-LABEL maintainer="DockForge <dublokcom@gmail.com>"
+LABEL maintainer="Dublok"
 LABEL description="A Docker image to capture and list installed packages and their versions in a Docker image."
-LABEL version="1.0"
 LABEL org.opencontainers.image.source https://github.com/DockForge/SBOMinify
 
 # Set working directory
